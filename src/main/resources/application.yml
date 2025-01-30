@@ -1,11 +1,20 @@
 server:
   port: 8888
+
 spring:
   application:
     name: config-server
+  autoconfigure:
+    exclude: org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration
   cloud:
     config:
       server:
         git:
-          uri: https://github.com/your-username/config-repo
+          uri: https://github.com/levchig737/config-server
+          default-label: master
           clone-on-start: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, env, refresh
