@@ -9,10 +9,12 @@ spring:
   cloud:
     config:
       server:
-        git:
-          uri: https://github.com/levchig737/config-server
-          default-label: master
-          clone-on-start: true
+        allow-override: true
+        override-none: false
+        override-system-properties: true
+  profiles:
+    active: native  # Включаем native profile
+
 management:
   endpoints:
     web:
