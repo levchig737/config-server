@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # Config Server
+  config-server:
+    image: config-server:latest
+    container_name: config-server
+    build: ./config-server
+    ports:
+      - "8888:8888"
+    environment:
+      SPRING_CLOUD_CONFIG_SERVER_GIT_URI: https://github.com/levchig737/config-server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - log_network
+
+  # User Service
+  user-service:
+    build: ./springwa
+    container_name: user-service
+    environment:
+      SPRING_APPLICATION_NAME: user-service
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      DATABASE_URL: jdbc:postgresql://user-postgres:5432/springwa
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
+    depends_on:
+      - config-server
+      - user-postgres
+    restart: on-failure
+    ports:
+      - "8080:8080"
+    networks:
+      - log_network
+
+  # Auditorium Service
+  auditorium-service:
+    build: ./auditorium-service
+    container_name: auditorium-service
+    environment:
+      SPRING_APPLICATION_NAME: auditorium-service
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      DATABASE_URL: jdbc:postgresql://auditorium-postgres:5432/auditorium_service_db
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
+    depends_on:
+      - config-server
+      - auditorium-postgres
+    restart: on-failure
+    ports:
+      - "8081:8081"
+    networks:
+      - log_network
+
+  # Databases
+  user-postgres:
+    image: postgres:14
+    container_name: user-postgres
+    environment:
+      POSTGRES_DB: springwa
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      DATABASE_URL: jdbc:postgresql://user-postgres:5432/springwa
+    volumes:
+      - user-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5431:5432"
+    networks:
+      - log_network
+
+  auditorium-postgres:
+    image: postgres:14
+    container_name: auditorium-postgres
+    environment:
+      POSTGRES_DB: auditorium_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      DATABASE_URL: jdbc:postgresql://auditorium-postgres:5432/auditorium_service_db
+    volumes:
+      - auditorium-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5430:5432"
+    networks:
+      - log_network
+
+volumes:
+  user-postgres-data:
+  auditorium-postgres-data:
+
+networks:
+  log_network:
+    driver: bridge
